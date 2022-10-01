@@ -65,7 +65,7 @@ def process_files(csv_folder):
             else:
                 test_occurrence_dict[occurance_key] = test_occurrence_dict[occurance_key] + 1
 
-            test_data, row_name = parse_test_results(file, test_name, penid)
+            test_data, test_result, row_name = parse_test_results(file, test_name, penid)
 
             if not row_name:
                 continue
@@ -74,6 +74,11 @@ def process_files(csv_folder):
             write_file = open(os.path.join(output_dir, file_name), 'a+', newline='')
             csv_writter = csv.writer(write_file, delimiter=',')
 
+            if ("SKIPPED" == test_result):
+                skipped_row = []
+                for test in row_name.split(","):
+                    skipped_row.append("NA_SKIPPED")
+                test_data.append(skipped_row)
             for row in test_data:
                 csv_writter.writerow([f"{penid}_{str(test_occurrence_dict[occurance_key])}", test_name] + row)
                 
@@ -126,9 +131,9 @@ def parse_test_results(file, test_name, penid):
                 continue
 
             if len(row) == 0:
-                return rows, row_name
+                return rows, test_result, row_name
             rows.append(row)
-    return rows, row_name
+    return rows, test_result, row_name
 
 
 if __name__ == "__main__":
