@@ -31,8 +31,7 @@ test_configs = [
                 'RSCANSTATISTICS',
                 'RSCANSTATISTICS_LIMIT'
                ]
-
-
+test_occurrence_dict = {}
 
 def process_files(csv_folder):
     print(f"output folder: {output_dir}")
@@ -60,6 +59,12 @@ def process_files(csv_folder):
         penid = get_penid(file)
 
         for test_name in test_configs:
+            occurance_key = f"{penid}_{test_name}"
+            if occurance_key not in test_occurrence_dict:
+                test_occurrence_dict[occurance_key] = 1
+            else:
+                test_occurrence_dict[occurance_key] = test_occurrence_dict[occurance_key] + 1
+
             test_data, row_name = parse_test_results(file, test_name, penid)
 
             if not row_name:
@@ -70,7 +75,7 @@ def process_files(csv_folder):
             csv_writter = csv.writer(write_file, delimiter=',')
 
             for row in test_data:
-                csv_writter.writerow([penid, test_name] + row)
+                csv_writter.writerow([f"penid_{str(test_occurrence_dict[occurance_key])}", test_name] + row)
                 
 
 
@@ -104,7 +109,7 @@ def parse_test_results(file, test_name, penid):
                 print(f"[INFO] Found test data for {test_name} result {test_result}")
                 # Skip the rows that are not relevant
 
-            if (not has_reached_header_row and has_found_testname and "Name" in row):
+            if (not has_reached_header_row and has_found_testname and len(row) > 1):
                 joined_row = ",".join(row)
                 if joined_row not in csv_file_dict:
                     file_name = f"{output_csv_name}_{len(csv_file_dict) + 1}.csv"
