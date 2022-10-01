@@ -5,7 +5,7 @@
 # -> python csv_aggregator.py -f <csv file folder> -o <output.csv>
 #
 
-import re
+import shutil
 import sys
 from optparse import OptionParser
 from pathlib import Path
@@ -13,32 +13,29 @@ import csv
 import os
 import glob
 
-
+csv_file_dict = {}
+output_dir = "output"
+output_csv_name = "output"
 test_configs = [ 
-                # Test Name     Rows to skip
-                ('INTERCON',                3 ),
-                ('PULL_DOWN',               3 ),
-                ('LEAKAGE',                 3 ),
-                ('TSR',                     3 ),
-                #('UID_CRC_CHECK',           3 ),
-                #('ID_BITS_DECODE',          3 ),
-                #('PEN_CRC_VERIFY',          3 ),
-                #('MROM_CHECK',              3 ),
-                #('ID_BITS_READ',            3 )
-                ('RSCAN',                   1 ),
-                #('RSCANSTATISTICS',         1 ),
-                #('RSCANSTATISTICS_LIMIT',   1 ),
+                # Test Name
+                'INTERCON',
+                'PULL_DOWN',
+                'LEAKAGE',
+                'TSR',
+                'UID_CRC_CHECK',
+                'ID_BITS_DECODE',
+                'PEN_CRC_VERIFY',
+                'MROM_CHECK',
+                'ID_BITS_READ',
+                'RSCAN',
+                'RSCANSTATISTICS',
+                'RSCANSTATISTICS_LIMIT'
                ]
 
 
 
-def process_files(csv_folder, output_csv_file):
-
-    # Create the CSV writter object
-    write_file = open(output_csv_file, 'w', newline='')
-    csv_writter = csv.writer(write_file, delimiter=',')
-    csv_writter.writerow(["Pen ID", "Test", "Signal Name", "Value", "LSL", "USL", "State"])
-    print(output_csv_file)
+def process_files(csv_folder):
+    print(f"output folder: {output_dir}")
 
     # Get list of CSV files to process
     csv_folder_path = Path(csv_folder)
@@ -62,16 +59,19 @@ def process_files(csv_folder, output_csv_file):
         print(f"[INFO] Processing file : {file}")
         penid = get_penid(file)
 
-        for test_config in test_configs:
-            test_data, test_result = parse_test_results(file, test_config[0])
-            
-            if not test_data:
+        for test_name in test_configs:
+            test_data, row_name = parse_test_results(file, test_name, penid)
+
+            if not row_name:
                 continue
 
-            for row in test_data:
-                #print([penid, test_config[0].strip(':')] + row)
-                csv_writter.writerow([penid, test_config[0]] + row)
+            file_name = csv_file_dict[row_name]
+            write_file = open(os.path.join(output_dir, file_name), 'a+', newline='')
+            csv_writter = csv.writer(write_file, delimiter=',')
 
+            for row in test_data:
+                csv_writter.writerow([penid, test_name] + row)
+                
 
 
 def get_penid(file):
@@ -87,31 +87,43 @@ def get_penid(file):
     
     return None
 
-def parse_test_results(file, test_name):
+def parse_test_results(file, test_name, penid):
     ''' Returns test data '''
     rows = []
     test_result = "NA"
+    row_name = ""
+    has_reached_header_row = False
+    has_found_testname = False
 
     with open(file, newline='') as csvfile:
         csv_reader = csv.reader(csvfile, delimiter=',')
         for row in csv_reader:
-            print(test_name)
             if len(row) > 0 and row[0].startswith(test_name+":"):
-            # if len(row) > 0 and row[0].startswith(test_name+":"):
+                has_found_testname = True
                 test_result = row[0].split(':')[1]
                 print(f"[INFO] Found test data for {test_name} result {test_result}")
                 # Skip the rows that are not relevant
-                
-                for test_config in test_configs:
-                    if test_config[0] == test_name:
-                        for i in range(test_config[1]):
-                            next(csv_reader)
 
-                for row in csv_reader:
-                    if len(row) == 0:
-                        return rows, test_result
-                    rows.append(row)
-    return rows, test_result
+            if (not has_reached_header_row and has_found_testname and "Name" in row):
+                joined_row = ",".join(row)
+                if joined_row not in csv_file_dict:
+                    file_name = f"{output_csv_name}_{len(csv_file_dict) + 1}.csv"
+                    csv_file_dict[joined_row] = file_name
+
+                    write_file = open(os.path.join(output_dir, file_name), 'a+', newline='')
+                    csv_writter = csv.writer(write_file, delimiter=',')
+                    csv_writter.writerow(["Pen ID", "Test"] + row)
+                row_name = joined_row
+                has_reached_header_row = True
+                continue
+                
+            if not has_reached_header_row:
+                continue
+
+            if len(row) == 0:
+                return rows, row_name
+            rows.append(row)
+    return rows, row_name
 
 
 if __name__ == "__main__":
@@ -119,11 +131,16 @@ if __name__ == "__main__":
     usage_str = "usage: %prog [options]"
     parser = OptionParser(usage=usage_str)
     parser.add_option("-f", "--folder", dest="csv_folder", metavar="FILE", help="Specifies input CSV folder")
-    parser.add_option("-o", "--output", dest="output_csv_file", metavar="FILE", help="Output CSV file")
+    parser.add_option("-o", "--output", dest="output_folder", metavar="FILE", help="Output CSV file")
     (options, args) = parser.parse_args(sys.argv)
 
-    print(f"Starting CSV aggregator. CSV folder = {options.csv_folder}, Output file = {options.output_csv_file}")
-    process_files(options.csv_folder, options.output_csv_file)
+    print(f"Starting CSV aggregator. CSV folder = {options.csv_folder}, Output file = {options.output_folder}")
+    output_dir = os.path.join(os.getcwd(), options.output_folder)
+    if os.path.exists(output_dir) and os.path.isdir(output_dir):
+        shutil.rmtree(output_dir)
+    os.mkdir(output_dir)
+    print(f"output directory: {output_dir}")
+    process_files(options.csv_folder)
     
 
 
