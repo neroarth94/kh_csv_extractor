@@ -118,7 +118,7 @@ def parse_test_results(file, test_name, penid):
                 # Skip the rows that are not relevant
 
             if ("SKIPPED" == test_result):
-                row_name = "NA,NA,NA,NA,NA,NA,NA,NA,NA,NA"
+                row_name = "NA_SKIPPED"
                 if row_name not in csv_file_dict:
                     file_name = f"{output_csv_name}_{len(csv_file_dict) + 1}.csv"
                     csv_file_dict[row_name] = file_name
