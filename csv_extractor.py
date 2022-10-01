@@ -19,7 +19,9 @@ output_csv_name = "output"
 test_configs = [ 
                 # Test Name
                 'INTERCON',
+                'EXP_OPENS',
                 'PULL_DOWN',
+                'CONTINUITY',
                 'LEAKAGE',
                 'TSR',
                 'UID_CRC_CHECK',
@@ -29,7 +31,8 @@ test_configs = [
                 'ID_BITS_READ',
                 'RSCAN',
                 'RSCANSTATISTICS',
-                'RSCANSTATISTICS_LIMIT'
+                'RSCANSTATISTICS_LIMIT',
+                'ANALOG_OFF_COLUMN_BITS'
                ]
 test_occurrence_dict = {}
 
