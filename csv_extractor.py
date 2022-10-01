@@ -75,7 +75,7 @@ def process_files(csv_folder):
             csv_writter = csv.writer(write_file, delimiter=',')
 
             for row in test_data:
-                csv_writter.writerow([f"penid_{str(test_occurrence_dict[occurance_key])}", test_name] + row)
+                csv_writter.writerow([f"{penid}_{str(test_occurrence_dict[occurance_key])}", test_name] + row)
                 
 
 
