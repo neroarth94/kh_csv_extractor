@@ -65,6 +65,9 @@ def process_files(csv_folder, output_csv_file):
         for test_config in test_configs:
             test_data, test_result = parse_test_results(file, test_config[0])
             
+            if not test_data:
+                continue
+
             for row in test_data:
                 #print([penid, test_config[0].strip(':')] + row)
                 csv_writter.writerow([penid, test_config[0]] + row)
@@ -87,13 +90,18 @@ def get_penid(file):
 def parse_test_results(file, test_name):
     ''' Returns test data '''
     rows = []
+    test_result = "NA"
+
     with open(file, newline='') as csvfile:
         csv_reader = csv.reader(csvfile, delimiter=',')
         for row in csv_reader:
+            print(test_name)
             if len(row) > 0 and row[0].startswith(test_name+":"):
+            # if len(row) > 0 and row[0].startswith(test_name+":"):
                 test_result = row[0].split(':')[1]
                 print(f"[INFO] Found test data for {test_name} result {test_result}")
                 # Skip the rows that are not relevant
+                
                 for test_config in test_configs:
                     if test_config[0] == test_name:
                         for i in range(test_config[1]):
@@ -102,8 +110,8 @@ def parse_test_results(file, test_name):
                 for row in csv_reader:
                     if len(row) == 0:
                         return rows, test_result
-                    
                     rows.append(row)
+    return rows, test_result
 
 
 if __name__ == "__main__":
