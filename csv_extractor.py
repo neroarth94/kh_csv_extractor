@@ -117,6 +117,17 @@ def parse_test_results(file, test_name, penid):
                 print(f"[INFO] Found test data for {test_name} result {test_result}")
                 # Skip the rows that are not relevant
 
+            if ("SKIPPED" == test_result):
+                row_name = "NA,NA,NA,NA,NA,NA,NA,NA,NA,NA"
+                if row_name not in csv_file_dict:
+                    file_name = f"{output_csv_name}_{len(csv_file_dict) + 1}.csv"
+                    csv_file_dict[row_name] = file_name
+
+                    write_file = open(os.path.join(output_dir, file_name), 'a+', newline='')
+                    csv_writter = csv.writer(write_file, delimiter=',')
+                    csv_writter.writerow(["Pen ID", "Test"] + row_name.split(","))
+                return rows, test_result, row_name
+
             if (not has_reached_header_row and has_found_testname and len(row) > 1):
                 joined_row = ",".join(row)
                 if joined_row not in csv_file_dict:
